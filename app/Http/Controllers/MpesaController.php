@@ -101,22 +101,25 @@ class MpesaController extends Controller
         $data_string=json_encode($curl_post_data);
 
         $curl = curl_init();
+
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->newAccessToken()));
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_POST, true);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
         // curl_setopt($curl, CURLOPT_TIMEOUT_MS, 200);
+
         $curl_response = curl_exec($curl);
+        $message=json_decode($curl_response);
+        // return $curl_response;
+
+        if(isset($message->errorMessage)){
+            return $message->errorMessage;
+        }else{
+            return redirect('/confirm');
+        }
         curl_close($curl);
-        return $curl_response;
         
-        // $curl_response = curl_exec($curl);
-        // if($curl_response = curl_exec($curl))curl_close($curl);{
-        //     return $curl_response;
-            
-        //  }
-        //  return "STK PUSH FAILED";
     }
 
     public function MpesaResponse(Request $request)
@@ -126,9 +129,35 @@ class MpesaController extends Controller
         $transaction = new MpesaTransaction;
         $transaction->response = json_encode($response);
         $transaction->save();
-
     }
+
+
     public function confirm(){
 
     }
 }
+
+
+        // if (curl_errno($curl)) {
+        //     $error_msg = curl_error($curl);
+        //     return $error_msg;
+
+        // }else{
+        //     return "YOUR DONATION HAS BEEN RECEIVED SUCCESSFULLY.";
+        // }
+
+        // if($curl_response === false)
+        // {
+        //     echo"Error: " .curl_error($curl);
+            
+        //  }
+        //  else
+        //  {
+        //     echo "YOUR DONATION HAS BEEN SUCCESSFULLY SENT.";
+        //  }
+//$curl_response = curl_exec($curl);
+        // if($curl_response = curl_exec($curl))curl_close($curl);{
+        //     return $curl_response;
+            
+        //  }
+        //  return "STK PUSH FAILED";

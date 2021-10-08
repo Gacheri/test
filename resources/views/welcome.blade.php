@@ -84,7 +84,6 @@
                 <div class="title m-b-md">
                    Laravel M-PESA Integration
                 </div>
-
                 <h1>C2B M-PESA INTEGRATION</h1>
                 <p>By Baddy</p>
                 <form action="{{ route('lipa') }}" method="POST" class="login-form" id="recaptchaForm">

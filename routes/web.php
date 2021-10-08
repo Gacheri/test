@@ -16,4 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-// Route::post('/confirm', 'MpesaController@confirm')->name('confirm');  
+Route::get('/confirm', function () {
+    return view('confirm');
+});  
