@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Models\MpesaTransaction;
+use App\Models\mpesac2bcallbacks;
+use Log;
 
 
 class MpesaController extends Controller
@@ -32,30 +34,6 @@ class MpesaController extends Controller
         $consumerSecret="GWMEFGZOLzyJT47t";
         $credentials= base64_encode($consumerKey.":".$consumerSecret);
         $url="https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials";
-    
-        // Http request
-
-        // $request = new HttpRequest();
-        // $request->setUrl('https://sandbox.safaricom.co.ke/oauth/v1/generate');
-        // $request->setMethod(HTTP_METH_POST);
-
-        // $request->setQueryData(array(
-        //         'grant_type' => 'client_credentials'
-        //     ));
-
-        // $request->setHeaders(array(
-        //     'Content-Type:application/json',
-        //     'Authorization:Bearer '.$this->newAccessToken())
-        // );
-
-        // try {
-        //      $response = $request->send();
-
-        //       echo $response->getBody();
-        //     }       
-        //     catch (HttpException $ex) {
-        //         echo $ex;
-        //     }
 
         //curl http request
         $curl = curl_init();
@@ -74,15 +52,14 @@ class MpesaController extends Controller
 
     public function stkPush(Request $request)
     {
-        // dd($request);  
+        //  dd($request);  
         // dynamism
         
             $phone =  $request->phone;
             $formatedPhone = substr($phone, 1);
             $code = "254";
-            $phoneNumber = $code.$formatedPhone;
-
-        $url="https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
+            $phonenumber = $code.$formatedPhone;
+            $url="https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest";
         
         $curl_post_data = [
             'BusinessShortCode' => 174379,
@@ -90,10 +67,10 @@ class MpesaController extends Controller
             'Timestamp' => Carbon::rawParse('now')->format('YmdHms'),
             'TransactionType' => 'CustomerPayBillOnline',
             'Amount' => '1',
-            'PartyA' => $phoneNumber, 
+            'PartyA' => '254799238995', 
             'PartyB' => 174379,
-            'PhoneNumber' => $phoneNumber, 
-            'CallBackURL' => 'https://b10e-102-222-146-133.ngrok.io/api/stk/callback',
+            'PhoneNumber' => '254799238995', 
+            'CallBackURL' => 'https://b334-102-222-146-146.ngrok.io/api/stk/callback',
             'AccountReference' => "Gacheri",
             'TransactionDesc' => "Till Lipa na Mpesa"
         ];
@@ -116,7 +93,7 @@ class MpesaController extends Controller
         if(isset($message->errorMessage)){
             return $message->errorMessage;
         }else{
-            return redirect('/confirm');
+            return $message->CustomerMessage;
         }
         curl_close($curl);
         
@@ -127,13 +104,58 @@ class MpesaController extends Controller
         $response = $request->getContent();
 
         $transaction = new MpesaTransaction;
-        $transaction->response = json_encode($response);
-        $transaction->save();
+        $callbackdata = new mpesac2bcallbacks;
+
+        $mpesacallback = json_encode($response);
+        $transaction->response = $mpesacallback;
+        $data = json_decode($response);
+        $resultcode = $data->Body->stkCallback->ResultCode;
+        
+        if($resultcode != "0")
+        {
+            echo "You have cancelled your transaction";
+        }
+        else 
+        {
+            $transaction->save();
+        }
+        Log::info($resultcode);
     }
 
+    public function SaveData(Request $request)
+    {
+        $response = $request->getContent();
+        $data = json_decode($response);
+        $mpesacallback = json_encode($response);
+        // var_dump($data); 
+        Log::info($mpesacallback); exit ();
+        $merchantrequest = $data->Body->stkCallback->MerchantRequestID;
+        $chekoutrequest = $data->Body->stkCallback->CheckoutRequestID;
+        $resultcode = $data->Body->stkCallback->ResultCode;
+        $resultdescription = $data->Body->stkCallback->ResultDesc;
+        $metadata = $data->Body->stkCallback->CallbackMetadata;
+        $amountpaid = $metadata->item[0]->value;
+        $receiptnumber = $metadata->item[1]->value;
+        // $balance = $metadata->item[2]->value;
+        $transactiondate = $metadata->item[3]->value;
+        $phonenumber = $metadata->item[4]->value;
 
-    public function confirm(){
+        // save to database
+        $callbackdata = new mpesac2bcallbacks;
+        $callbackdata->MerchantRequestID=$merchantrequest;
+        $callbackdata->CheckoutRequestID=$chekoutrequest;
+        $callbackdata->ResultCode=$resultcode;
+        $callbackdata->ResultDesc=$resultdescription;
+        $callbackdata->transAmount=$amountpaid;
+        $callbackdata->MpesaReceiptNumber=$receiptnumber;
+        $callbackdata->TransactionDate=$transactiondate;
+        $callbackdata->PhoneNumber=$phonenumber;
+        
+        $callbackdata->save();
+        // return response()->json($metadata);
+        
 
+        
     }
 }
 
@@ -155,9 +177,25 @@ class MpesaController extends Controller
         //  {
         //     echo "YOUR DONATION HAS BEEN SUCCESSFULLY SENT.";
         //  }
-//$curl_response = curl_exec($curl);
+        //$curl_response = curl_exec($curl);
         // if($curl_response = curl_exec($curl))curl_close($curl);{
         //     return $curl_response;
             
         //  }
         //  return "STK PUSH FAILED";
+
+        // {
+        //     "custid": "454969",
+        //     "custname": "Judy Murray DVM",
+        //     "invno": "00360",
+        //     "invdescr": "Test Invoice",
+        //     "invdate": "2021-05-25",
+        //     "currcode": "USD",
+        //     "payamount": 10,
+        //     "invamtkes": 0,
+        //     "totalpaid": 10,
+        //     "balance": 0,
+        //     "transactiontype" : "license",
+        //     "isvalid": false,
+        //     "message": "Invoice Fully Paid"
+        //     }php
