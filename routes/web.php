@@ -18,4 +18,5 @@ Route::get('/', function () {
 });
 Route::get('/confirm', function () {
     return view('confirm');
-});  
+});
+// Route::post('/confirm', 'MpesaController@confirm')->name('confirm');

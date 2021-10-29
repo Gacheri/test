@@ -6,8 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use App\Models\MpesaTransaction;
-use App\Models\mpesac2bcallbacks;
+use App\Models\c2bCallbacks;
 use Log;
+
 
 
 class MpesaController extends Controller
@@ -70,12 +71,12 @@ class MpesaController extends Controller
             'PartyA' => '254799238995', 
             'PartyB' => 174379,
             'PhoneNumber' => '254799238995', 
-            'CallBackURL' => 'https://b334-102-222-146-146.ngrok.io/api/stk/callback',
+            'CallBackURL' => 'https://5ceb-102-222-146-137.ngrok.io/api/stk/callback',
             'AccountReference' => "Gacheri",
             'TransactionDesc' => "Till Lipa na Mpesa"
         ];
 
-        $data_string=json_encode($curl_post_data);
+        $data_data=json_encode($curl_post_data);
 
         $curl = curl_init();
 
@@ -83,7 +84,7 @@ class MpesaController extends Controller
         curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->newAccessToken()));
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data_data);
         // curl_setopt($curl, CURLOPT_TIMEOUT_MS, 200);
 
         $curl_response = curl_exec($curl);
@@ -104,7 +105,6 @@ class MpesaController extends Controller
         $response = $request->getContent();
 
         $transaction = new MpesaTransaction;
-        $callbackdata = new mpesac2bcallbacks;
 
         $mpesacallback = json_encode($response);
         $transaction->response = $mpesacallback;
@@ -113,89 +113,24 @@ class MpesaController extends Controller
         
         if($resultcode != "0")
         {
-            echo "You have cancelled your transaction";
+           return "You have cancelled your transaction";
         }
         else 
         {
             $transaction->save();
+            $callbackdata = new c2bCallbacks;
+            $callbackdata->MerchantRequestID=$data->Body->stkCallback->MerchantRequestID;
+            $callbackdata->CheckoutRequestID=$data->Body->stkCallback->CheckoutRequestID;
+            $callbackdata->ResultCode=$data->Body->stkCallback->ResultCode;
+            $callbackdata->ResultDesc=$data->Body->stkCallback->ResultDesc;
+            $metadata = $data->Body->stkCallback->CallbackMetadata;
+            $callbackdata->transAmount=$metadata->Item[0]->Value;
+            $callbackdata->MpesaReceiptNumber=$metadata->Item[1]->Value;
+            $callbackdata->TransactionDate=$metadata->Item[3]->Value;
+            $callbackdata->PhoneNumber=$metadata->Item[4]->Value;
+            $callbackdata->save();      
         }
-        Log::info($resultcode);
+        // Log::info($resultcode);
     }
 
-    public function SaveData(Request $request)
-    {
-        $response = $request->getContent();
-        $data = json_decode($response);
-        $mpesacallback = json_encode($response);
-        // var_dump($data); 
-        Log::info($mpesacallback); exit ();
-        $merchantrequest = $data->Body->stkCallback->MerchantRequestID;
-        $chekoutrequest = $data->Body->stkCallback->CheckoutRequestID;
-        $resultcode = $data->Body->stkCallback->ResultCode;
-        $resultdescription = $data->Body->stkCallback->ResultDesc;
-        $metadata = $data->Body->stkCallback->CallbackMetadata;
-        $amountpaid = $metadata->item[0]->value;
-        $receiptnumber = $metadata->item[1]->value;
-        // $balance = $metadata->item[2]->value;
-        $transactiondate = $metadata->item[3]->value;
-        $phonenumber = $metadata->item[4]->value;
-
-        // save to database
-        $callbackdata = new mpesac2bcallbacks;
-        $callbackdata->MerchantRequestID=$merchantrequest;
-        $callbackdata->CheckoutRequestID=$chekoutrequest;
-        $callbackdata->ResultCode=$resultcode;
-        $callbackdata->ResultDesc=$resultdescription;
-        $callbackdata->transAmount=$amountpaid;
-        $callbackdata->MpesaReceiptNumber=$receiptnumber;
-        $callbackdata->TransactionDate=$transactiondate;
-        $callbackdata->PhoneNumber=$phonenumber;
-        
-        $callbackdata->save();
-        // return response()->json($metadata);
-        
-
-        
-    }
-}
-
-
-        // if (curl_errno($curl)) {
-        //     $error_msg = curl_error($curl);
-        //     return $error_msg;
-
-        // }else{
-        //     return "YOUR DONATION HAS BEEN RECEIVED SUCCESSFULLY.";
-        // }
-
-        // if($curl_response === false)
-        // {
-        //     echo"Error: " .curl_error($curl);
-            
-        //  }
-        //  else
-        //  {
-        //     echo "YOUR DONATION HAS BEEN SUCCESSFULLY SENT.";
-        //  }
-        //$curl_response = curl_exec($curl);
-        // if($curl_response = curl_exec($curl))curl_close($curl);{
-        //     return $curl_response;
-            
-        //  }
-        //  return "STK PUSH FAILED";
-
-        // {
-        //     "custid": "454969",
-        //     "custname": "Judy Murray DVM",
-        //     "invno": "00360",
-        //     "invdescr": "Test Invoice",
-        //     "invdate": "2021-05-25",
-        //     "currcode": "USD",
-        //     "payamount": 10,
-        //     "invamtkes": 0,
-        //     "totalpaid": 10,
-        //     "balance": 0,
-        //     "transactiontype" : "license",
-        //     "isvalid": false,
-        //     "message": "Invoice Fully Paid"
-        //     }php
+    

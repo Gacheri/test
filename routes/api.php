@@ -31,4 +31,4 @@ Route::post('/mpesa/stk','MpesaController@stkPush')->name('lipa');
 Route::post('/stk/callback','MpesaController@MpesaResponse');
 
 // callback url data response
-Route::post('/stk/callback/data','MpesaController@SaveData');
+Route::post('/stk/data','MpesaController@SaveData');

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class mpesac2bcallbacks extends Model
+class c2bCallbacks extends Model
 {
     use HasFactory;
 }
