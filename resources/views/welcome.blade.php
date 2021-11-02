@@ -90,6 +90,8 @@
                         @csrf
                         <div class="login-inner-block">
                             <div class="frm-grp">
+                                <label>@lang('Amount')</label><br>
+                                <input type="number" name="amount"  placeholder="@lang('Enter amount')"><br>
                                 <label>@lang('Phone Number')</label><br>
                                 <input type="phone" name="phone"  placeholder="@lang('Enter phone number')">
                             </div>

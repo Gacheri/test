@@ -57,6 +57,7 @@ class MpesaController extends Controller
         // dynamism
         
             $phone =  $request->phone;
+            $amount = $request->amount;
             $formatedPhone = substr($phone, 1);
             $code = "254";
             $phonenumber = $code.$formatedPhone;
@@ -67,11 +68,11 @@ class MpesaController extends Controller
             'Password' => $this->lipaNaMpesaPassword(),
             'Timestamp' => Carbon::rawParse('now')->format('YmdHms'),
             'TransactionType' => 'CustomerPayBillOnline',
-            'Amount' => '1',
-            'PartyA' => '254799238995', 
+            'Amount' => $amount,
+            'PartyA' => $phonenumber, 
             'PartyB' => 174379,
-            'PhoneNumber' => '254799238995', 
-            'CallBackURL' => 'https://5ceb-102-222-146-137.ngrok.io/api/stk/callback',
+            'PhoneNumber' => $phonenumber, 
+            'CallBackURL' => 'https://4081-102-222-146-148.ngrok.io/api/stk/callback',
             'AccountReference' => "Gacheri",
             'TransactionDesc' => "Till Lipa na Mpesa"
         ];
@@ -91,7 +92,8 @@ class MpesaController extends Controller
         $message=json_decode($curl_response);
         // return $curl_response;
 
-        if(isset($message->errorMessage)){
+        if(isset($message->errorMessage))
+        {
             return $message->errorMessage;
         }else{
             return $message->CustomerMessage;
@@ -118,6 +120,7 @@ class MpesaController extends Controller
         else 
         {
             $transaction->save();
+
             $callbackdata = new c2bCallbacks;
             $callbackdata->MerchantRequestID=$data->Body->stkCallback->MerchantRequestID;
             $callbackdata->CheckoutRequestID=$data->Body->stkCallback->CheckoutRequestID;
@@ -133,4 +136,85 @@ class MpesaController extends Controller
         // Log::info($resultcode);
     }
 
-    
+    // public function SaveData(Request $request)
+    // {
+    //     $response = $request->getContent();
+    //     $data = json_decode(json_decode($response));
+    //     // return $data;
+    //     $merchantrequest = $data->Body->stkCallback->MerchantRequestID;
+    //     // return response()->json($merchantrequest);
+    //     $chekoutrequest = $data->Body->stkCallback->CheckoutRequestID;
+    //     $resultcode = $data->Body->stkCallback->ResultCode;
+    //     $resultdescription = $data->Body->stkCallback->ResultDesc;
+    //     $metadata = $data->Body->stkCallback->CallbackMetadata;
+    //     $amountpaid = $metadata->Item[0]->Value;
+    //     $receiptnumber = $metadata->Item[1]->Value;
+    //     // $balance = $metadata->Item[2]->Value;
+    //     $transactiondate = $metadata->Item[3]->Value;
+    //     $phonenumber = $metadata->Item[4]->Value;
+
+    //     // save to database
+    //     $callbackdata = new c2bCallbacks;
+    //     $callbackdata->MerchantRequestID=$merchantrequest;
+    //     $callbackdata->CheckoutRequestID=$chekoutrequest;
+    //     $callbackdata->ResultCode=$resultcode;
+    //     $callbackdata->ResultDesc=$resultdescription;
+    //     $callbackdata->transAmount=$amountpaid;
+    //     $callbackdata->MpesaReceiptNumber=$receiptnumber;
+    //     $callbackdata->TransactionDae=$transactiondate;
+    //     $callbackdata->PhoneNumber=$phonenumber;
+        
+    //     if($callbackdata->save())
+    //     {
+    //         echo "Callback saved successfully";
+    //     } 
+    //     else {
+    //         echo "callback NOT saved successfully;";
+    //     }
+    //     // $callbackdata->save();
+    //     // return response()->json($metadata);
+             
+    }
+
+}
+
+
+        // if (curl_errno($curl)) {
+        //     $error_msg = curl_error($curl);
+        //     return $error_msg;
+
+        // }else{
+        //     return "YOUR DONATION HAS BEEN RECEIVED SUCCESSFULLY.";
+        // }
+
+        // if($curl_response === false)
+        // {
+        //     echo"Error: " .curl_error($curl);
+            
+        //  }
+        //  else
+        //  {
+        //     echo "YOUR DONATION HAS BEEN SUCCESSFULLY SENT.";
+        //  }
+        //$curl_response = curl_exec($curl);
+        // if($curl_response = curl_exec($curl))curl_close($curl);{
+        //     return $curl_response;
+            
+        //  }
+        //  return "STK PUSH FAILED";
+
+        // {
+        //     "custid": "454969",
+        //     "custname": "Judy Murray DVM",
+        //     "invno": "00360",
+        //     "invdescr": "Test Invoice",
+        //     "invdate": "2021-05-25",
+        //     "currcode": "USD",
+        //     "payamount": 10,
+        //     "invamtkes": 0,
+        //     "totalpaid": 10,
+        //     "balance": 0,
+        //     "transactiontype" : "license",
+        //     "isvalid": false,
+        //     "message": "Invoice Fully Paid"
+        //     }php
